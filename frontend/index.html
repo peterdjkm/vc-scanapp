@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="format-detection" content="telephone=no">
+    <style>
+        /* Prevent video rotation on iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            #video {
+                transform: none !important;
+                -webkit-transform: none !important;
+            }
+        }
+    </style>
+    <title>Visiting Card Scanner</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📇 Visiting Card Scanner</h1>
+            <p class="subtitle">Capture and extract contact information</p>
+        </header>
+
+        <!-- Camera Section -->
+        <section id="camera-section" class="section">
+            <div class="camera-container">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <canvas id="detection-canvas" style="display: none;"></canvas>
+                <div id="camera-overlay" class="camera-overlay">
+                    <div class="scan-frame"></div>
+                    <p class="instruction">Position card within frame</p>
+                </div>
+                <div id="camera-placeholder" class="camera-placeholder">
+                    <p>📷 Camera not available</p>
+                    <p class="placeholder-hint">Use file upload instead</p>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="capture-btn" class="btn btn-primary" disabled>
+                    📷 Capture Card
+                </button>
+                <button id="upload-btn" class="btn btn-secondary">
+                    📁 Upload Image
+                </button>
+                <input type="file" id="file-input" accept="image/*" capture="environment" style="display: none;">
+            </div>
+        </section>
+
+        <!-- Processing Section -->
+        <section id="processing-section" class="section hidden">
+            <div class="spinner"></div>
+            <p>Processing card...</p>
+            <p class="processing-status">Extracting information...</p>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="section hidden">
+            <div class="results-header">
+                <h2>Extracted Information</h2>
+                <div class="confidence-badge" id="confidence-badge">
+                    <span id="confidence-value">--</span>% confidence
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div class="field-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" class="field-input" placeholder="Name">
+                    <span class="field-confidence" id="name-confidence"></span>
+                </div>
+
+                <div class="field-group">
+                    <label for="organisation">Organisation</label>
+                    <input type="text" id="organisation" class="field-input" placeholder="Company/Organisation">
+                    <span class="field-confidence" id="organisation-confidence"></span>
+                </div>
+
+                <div class="field-group">
+                    <label for="mobile">Mobile Number</label>
+                    <input type="tel" id="mobile" class="field-input" placeholder="+91 12345 67890">
+                    <span class="field-confidence" id="mobile-confidence"></span>
+                </div>
+
+                <div class="field-group">
+                    <label for="landline">Landline Number</label>
+                    <input type="tel" id="landline" class="field-input" placeholder="044-1234 5678">
+                    <span class="field-confidence" id="landline-confidence"></span>
+                </div>
+
+                <div class="field-group">
+                    <label for="email">Email ID</label>
+                    <input type="email" id="email" class="field-input" placeholder="email@example.com">
+                    <span class="field-confidence" id="email-confidence"></span>
+                </div>
+
+                <div class="field-group">
+                    <label for="designation">Designation</label>
+                    <input type="text" id="designation" class="field-input" placeholder="Job Title">
+                    <span class="field-confidence" id="designation-confidence"></span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="save-btn" class="btn btn-success">
+                    💾 Save Contact
+                </button>
+                <button id="retry-btn" class="btn btn-secondary">
+                    🔄 Scan Another
+                </button>
+            </div>
+
+            <!-- Debug Section (Collapsible) -->
+            <details class="raw-text-section">
+                <summary>🔍 Debug: View OCR & Extraction Details</summary>
+                <div class="debug-section">
+                    <h3>Raw OCR Text:</h3>
+                    <pre id="raw-text" class="raw-text"></pre>
+                    <h3>Extracted Text (Parser Output):</h3>
+                    <pre id="extracted-text" class="raw-text"></pre>
+                    <h3>Extraction Method:</h3>
+                    <p id="extraction-method" class="method-info"></p>
+                </div>
+            </details>
+        </section>
+
+        <!-- Success Message -->
+        <div id="success-message" class="message success hidden">
+            ✅ Contact saved successfully!
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="message error hidden">
+            ❌ <span id="error-text"></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
