@@ -729,6 +729,9 @@ async function saveContact() {
             return;
         }
         
+        // Store pending data
+        pendingContactData = contactData;
+        
         showProcessing();
         
         const response = await fetch(`${API_BASE_URL}/api/contacts`, {
@@ -745,18 +748,7 @@ async function saveContact() {
             // Check if it's a duplicate
             if (response.status === 409 && result.is_duplicate) {
                 hideProcessing();
-                // Show duplicate warning with option to save anyway
-                const duplicateName = result.duplicate?.contact?.name || 'Unknown';
-                const similarity = result.duplicate?.similarity || 0;
-                const confirmMsg = `⚠️ Duplicate detected!\n\nSimilar contact found: ${duplicateName}\nSimilarity: ${(similarity * 100).toFixed(0)}%\n\nDo you want to save anyway?`;
-                
-                if (confirm(confirmMsg)) {
-                    // User wants to save anyway - we could add a flag to bypass duplicate check
-                    // For now, just show the error message
-                    showError(result.message || 'Duplicate contact detected. Please check existing contacts.');
-                } else {
-                    showError('Save cancelled. Please review the duplicate contact.');
-                }
+                showDuplicateModal(result.duplicate, contactData);
             } else {
                 throw new Error(result.error || 'Failed to save contact');
             }
