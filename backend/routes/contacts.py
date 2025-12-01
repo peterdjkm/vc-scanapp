@@ -88,6 +88,43 @@ def get_contact(contact_id):
             'error': str(e)
         }), 500
 
+@contacts_bp.route('/contacts/<contact_id>', methods=['DELETE'])
+def delete_contact(contact_id):
+    """Delete a contact by ID"""
+    # Check if database is enabled
+    database_enabled = current_app.config.get('DATABASE_ENABLED', False)
+    database_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
+    
+    if not database_enabled or not database_uri:
+        return jsonify({
+            'success': False,
+            'error': 'Database disabled - cannot delete contacts'
+        }), 503
+    
+    try:
+        contact = Contact.query.get(contact_id)
+        
+        if not contact:
+            return jsonify({
+                'success': False,
+                'error': 'Contact not found'
+            }), 404
+        
+        db.session.delete(contact)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contact deleted successfully'
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @contacts_bp.route('/contacts', methods=['POST'])
 def save_contact():
     """

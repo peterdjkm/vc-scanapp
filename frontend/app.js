@@ -23,6 +23,7 @@ const errorMessage = document.getElementById('error-message');
 const errorText = document.getElementById('error-text');
 const duplicateModal = document.getElementById('duplicate-modal');
 const duplicateInfo = document.getElementById('duplicate-info');
+const contactsSearch = document.getElementById('contacts-search');
 
 // Field inputs
 const nameInput = document.getElementById('name');
@@ -526,6 +527,7 @@ function setupEventListeners() {
     document.getElementById('scan-card-btn').addEventListener('click', showCamera);
     document.getElementById('view-contacts-btn').addEventListener('click', showContactsList);
     document.getElementById('close-contacts-btn').addEventListener('click', hideContactsList);
+    contactsSearch.addEventListener('input', filterContacts);
     
     // Duplicate modal buttons
     document.getElementById('overwrite-btn').addEventListener('click', overwriteContact);
@@ -733,6 +735,10 @@ function populateField(fieldId, fieldData) {
 // Save contact
 async function saveContact() {
     try {
+        const saveBtn = document.getElementById('save-btn');
+        const isEditMode = saveBtn.getAttribute('data-edit-mode') === 'true';
+        const contactId = saveBtn.getAttribute('data-contact-id');
+        
         const contactData = {
             name: nameInput.value,
             organisation: orgInput.value,
@@ -748,8 +754,13 @@ async function saveContact() {
             return;
         }
         
-        // Store pending data
-        pendingContactData = contactData;
+        // If editing, include contact ID
+        if (isEditMode && contactId) {
+            contactData.id = contactId;
+        } else {
+            // Store pending data for duplicate check
+            pendingContactData = contactData;
+        }
         
         showProcessing();
         
@@ -764,8 +775,8 @@ async function saveContact() {
         const result = await response.json();
         
         if (!response.ok) {
-            // Check if it's a duplicate
-            if (response.status === 409 && result.is_duplicate) {
+            // Check if it's a duplicate (only for new contacts, not edits)
+            if (!isEditMode && response.status === 409 && result.is_duplicate) {
                 hideProcessing();
                 showDuplicateModal(result.duplicate, contactData);
             } else {
@@ -775,12 +786,23 @@ async function saveContact() {
         }
         
         hideProcessing();
-        showSuccess();
         
-        // Reset after 2 seconds
-        setTimeout(() => {
-            resetScanner();
-        }, 2000);
+        // If editing, refresh contacts list
+        if (isEditMode) {
+            showSuccess('Contact updated successfully!');
+            // Reset save button
+            saveBtn.textContent = '💾 Save Contact';
+            saveBtn.removeAttribute('data-edit-mode');
+            saveBtn.removeAttribute('data-contact-id');
+            // Reload contacts
+            await showContactsList();
+        } else {
+            showSuccess('Contact saved successfully!');
+            // Reset after 2 seconds
+            setTimeout(() => {
+                resetScanner();
+            }, 2000);
+        }
         
     } catch (error) {
         console.error('Save error:', error);
@@ -1007,6 +1029,147 @@ function hideContactsList() {
     cameraSection.classList.add('hidden');
     resultsSection.classList.add('hidden');
     homepageActions.classList.remove('hidden');
+    contactsSearch.value = ''; // Clear search
+}
+
+// Render contacts list
+function renderContacts(contacts) {
+    if (!contacts || contacts.length === 0) {
+        contactsList.innerHTML = '<p>No contacts found.</p>';
+        return;
+    }
+    
+    contactsList.innerHTML = contacts.map(contact => `
+        <div class="contact-card" data-contact-id="${contact.id}">
+            <h3>${contact.name || 'Unknown'}</h3>
+            <p><strong>Organisation:</strong> ${contact.organisation || 'N/A'}</p>
+            <p><strong>Designation:</strong> ${contact.designation || 'N/A'}</p>
+            <p><strong>Email:</strong> ${contact.email_id || 'N/A'}</p>
+            <p><strong>Mobile:</strong> ${contact.mobile_number || 'N/A'}</p>
+            <p><strong>Landline:</strong> ${contact.landline_number || 'N/A'}</p>
+            <p class="contact-meta">Saved: ${new Date(contact.created_at).toLocaleDateString()}</p>
+            <div class="contact-actions">
+                <button class="btn btn-small btn-primary edit-contact-btn" data-contact-id="${contact.id}">
+                    ✏️ Edit
+                </button>
+                <button class="btn btn-small btn-danger delete-contact-btn" data-contact-id="${contact.id}">
+                    🗑️ Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add event listeners for edit and delete buttons
+    document.querySelectorAll('.edit-contact-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const contactId = e.target.getAttribute('data-contact-id');
+            editContact(contactId);
+        });
+    });
+    
+    document.querySelectorAll('.delete-contact-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const contactId = e.target.getAttribute('data-contact-id');
+            deleteContact(contactId);
+        });
+    });
+}
+
+// Filter contacts by search term
+function filterContacts() {
+    const searchTerm = contactsSearch.value.toLowerCase().trim();
+    
+    if (!window.allContacts) {
+        return;
+    }
+    
+    if (!searchTerm) {
+        renderContacts(window.allContacts);
+        return;
+    }
+    
+    const filtered = window.allContacts.filter(contact => {
+        const name = (contact.name || '').toLowerCase();
+        const email = (contact.email_id || '').toLowerCase();
+        const org = (contact.organisation || '').toLowerCase();
+        const designation = (contact.designation || '').toLowerCase();
+        const mobile = (contact.mobile_number || '').toLowerCase();
+        const landline = (contact.landline_number || '').toLowerCase();
+        
+        return name.includes(searchTerm) ||
+               email.includes(searchTerm) ||
+               org.includes(searchTerm) ||
+               designation.includes(searchTerm) ||
+               mobile.includes(searchTerm) ||
+               landline.includes(searchTerm);
+    });
+    
+    renderContacts(filtered);
+}
+
+// Delete contact
+async function deleteContact(contactId) {
+    if (!confirm('Are you sure you want to delete this contact? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/contacts/${contactId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to delete contact');
+        }
+        
+        // Remove from local list
+        window.allContacts = window.allContacts.filter(c => c.id !== contactId);
+        
+        // Re-render contacts
+        filterContacts();
+        
+        showSuccess('Contact deleted successfully!');
+        
+    } catch (error) {
+        console.error('Delete error:', error);
+        showError(error.message || 'Failed to delete contact');
+    }
+}
+
+// Edit contact
+async function editContact(contactId) {
+    const contact = window.allContacts.find(c => c.id === contactId);
+    if (!contact) {
+        showError('Contact not found');
+        return;
+    }
+    
+    // Populate form fields with contact data
+    nameInput.value = contact.name || '';
+    orgInput.value = contact.organisation || '';
+    mobileInput.value = contact.mobile_number || '';
+    landlineInput.value = contact.landline_number || '';
+    emailInput.value = contact.email_id || '';
+    designationInput.value = contact.designation || '';
+    
+    // Show results section with edit mode
+    const homepageActions = document.getElementById('homepage-actions');
+    homepageActions.classList.add('hidden');
+    contactsSection.classList.add('hidden');
+    cameraSection.classList.add('hidden');
+    resultsSection.classList.remove('hidden');
+    
+    // Change save button text
+    const saveBtn = document.getElementById('save-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '💾 Update Contact';
+    saveBtn.setAttribute('data-edit-mode', 'true');
+    saveBtn.setAttribute('data-contact-id', contactId);
+    
+    // Scroll to results
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Show/hide sections

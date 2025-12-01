@@ -463,6 +463,24 @@ header h1 {
 }
 
 /* Contacts List */
+.search-container {
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-shadow: var(--shadow);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 .contacts-list {
     max-height: 70vh;
     overflow-y: auto;
@@ -475,6 +493,29 @@ header h1 {
     padding: 1rem;
     margin-bottom: 1rem;
     box-shadow: var(--shadow);
+    position: relative;
+}
+
+.contact-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.btn-danger {
+    background: var(--error-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #DC2626;
 }
 
 .contact-card h3 {
