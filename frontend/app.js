@@ -57,6 +57,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Don't auto-initialize camera - wait for user to click "Scan New Card"
 });
 
+// Show camera section
+function showCamera() {
+    const homepageActions = document.getElementById('homepage-actions');
+    const cameraSection = document.getElementById('camera-section');
+    const resultsSection = document.getElementById('results-section');
+    const contactsSection = document.getElementById('contacts-section');
+    
+    homepageActions.classList.add('hidden');
+    contactsSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    cameraSection.classList.remove('hidden');
+    
+    // Initialize camera when showing camera section
+    if (!stream) {
+        initializeCamera();
+    }
+}
+
 // Initialize camera
 async function initializeCamera() {
     try {
