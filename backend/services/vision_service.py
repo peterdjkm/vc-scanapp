@@ -6,7 +6,14 @@ import os
 import base64
 from io import BytesIO
 from PIL import Image
-from services.image_preprocessor import ImagePreprocessor
+
+# Optional import for image preprocessing (not included in MVP)
+try:
+    from services.image_preprocessor import ImagePreprocessor
+    PREPROCESSOR_AVAILABLE = True
+except ImportError:
+    PREPROCESSOR_AVAILABLE = False
+    ImagePreprocessor = None
 
 class VisionService:
     """Service for interacting with Google Vision API"""
@@ -23,7 +30,7 @@ class VisionService:
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
         
         self.client = vision.ImageAnnotatorClient()
-        self.preprocessor = ImagePreprocessor() if preprocess else None
+        self.preprocessor = ImagePreprocessor() if (preprocess and PREPROCESSOR_AVAILABLE) else None
     
     def extract_text(self, image_data):
         """
