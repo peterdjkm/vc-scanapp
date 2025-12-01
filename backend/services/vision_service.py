@@ -2,8 +2,11 @@
 Google Vision API service for OCR
 """
 from google.cloud import vision
+from google.oauth2 import service_account
 import os
+import json
 import base64
+import tempfile
 from io import BytesIO
 from PIL import Image
 
@@ -25,11 +28,34 @@ class VisionService:
         Args:
             preprocess: Whether to preprocess images before OCR (default: True)
         """
-        credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-        if credentials_path:
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
+        credentials_value = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        credentials = None
         
-        self.client = vision.ImageAnnotatorClient()
+        if credentials_value:
+            # Check if it's a file path or JSON content
+            if os.path.exists(credentials_value):
+                # It's a file path
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+            else:
+                # It's likely JSON content (common in cloud deployments)
+                try:
+                    # Try to parse as JSON
+                    if credentials_value.strip().startswith('{'):
+                        creds_dict = json.loads(credentials_value)
+                        credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                    else:
+                        # Might be a file path that doesn't exist yet, try to use it anyway
+                        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+                except (json.JSONDecodeError, ValueError):
+                    # Not valid JSON, treat as file path
+                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+        
+        # Initialize client with credentials if we have them, otherwise use default
+        if credentials:
+            self.client = vision.ImageAnnotatorClient(credentials=credentials)
+        else:
+            self.client = vision.ImageAnnotatorClient()
+        
         self.preprocessor = ImagePreprocessor() if (preprocess and PREPROCESSOR_AVAILABLE) else None
     
     def extract_text(self, image_data):
