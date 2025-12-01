@@ -16,9 +16,13 @@ const fileInput = document.getElementById('file-input');
 const cameraSection = document.getElementById('camera-section');
 const processingSection = document.getElementById('processing-section');
 const resultsSection = document.getElementById('results-section');
+const contactsSection = document.getElementById('contacts-section');
+const contactsList = document.getElementById('contacts-list');
 const successMessage = document.getElementById('success-message');
 const errorMessage = document.getElementById('error-message');
 const errorText = document.getElementById('error-text');
+const duplicateModal = document.getElementById('duplicate-modal');
+const duplicateInfo = document.getElementById('duplicate-info');
 
 // Field inputs
 const nameInput = document.getElementById('name');
@@ -44,6 +48,8 @@ let lastDetectedBounds = null;
 let scanFrame = null;
 let boundsHistory = []; // Store recent bounds for smoothing
 const MAX_HISTORY = 5; // Number of frames to average
+let currentDuplicateInfo = null; // Store duplicate info for overwrite
+let pendingContactData = null; // Store contact data pending save
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -499,6 +505,13 @@ function setupEventListeners() {
     
     document.getElementById('save-btn').addEventListener('click', saveContact);
     document.getElementById('retry-btn').addEventListener('click', resetScanner);
+    document.getElementById('view-contacts-btn').addEventListener('click', showContactsList);
+    document.getElementById('close-contacts-btn').addEventListener('click', hideContactsList);
+    
+    // Duplicate modal buttons
+    document.getElementById('overwrite-btn').addEventListener('click', overwriteContact);
+    document.getElementById('save-new-btn').addEventListener('click', saveAsNewContact);
+    document.getElementById('cancel-save-btn').addEventListener('click', cancelSave);
     
     // Prevent orientation changes from affecting video
     window.addEventListener('orientationchange', () => {
@@ -809,7 +822,12 @@ function hideProcessing() {
     processingSection.classList.add('hidden');
 }
 
-function showSuccess() {
+function showSuccess(message) {
+    if (message) {
+        successMessage.textContent = `✅ ${message}`;
+    } else {
+        successMessage.textContent = '✅ Contact saved successfully!';
+    }
     successMessage.classList.remove('hidden');
     setTimeout(() => {
         hideSuccess();

@@ -24,6 +24,9 @@
         <header>
             <h1>📇 Visiting Card Scanner</h1>
             <p class="subtitle">Capture and extract contact information</p>
+            <button id="view-contacts-btn" class="btn btn-secondary" style="margin-top: 0.5rem;">
+                📋 View Contacts
+            </button>
         </header>
 
         <!-- Camera Section -->
@@ -128,6 +131,37 @@
                 </div>
             </details>
         </section>
+
+        <!-- Success Message -->
+        <div id="success-message" class="message success hidden">
+            ✅ Contact saved successfully!
+        </div>
+
+        <!-- Contacts List Section -->
+        <section id="contacts-section" class="section hidden">
+            <div class="results-header">
+                <h2>Saved Contacts</h2>
+                <button id="close-contacts-btn" class="btn btn-secondary">
+                    ✕ Close
+                </button>
+            </div>
+            <div id="contacts-list" class="contacts-list">
+                <p>Loading contacts...</p>
+            </div>
+        </section>
+
+        <!-- Duplicate Warning Modal -->
+        <div id="duplicate-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>⚠️ Duplicate Contact Detected</h3>
+                <div id="duplicate-info" class="duplicate-info"></div>
+                <div class="modal-actions">
+                    <button id="overwrite-btn" class="btn btn-warning">🔄 Overwrite Existing</button>
+                    <button id="save-new-btn" class="btn btn-success">💾 Save as New</button>
+                    <button id="cancel-save-btn" class="btn btn-secondary">❌ Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Success Message -->
         <div id="success-message" class="message success hidden">
