@@ -68,12 +68,19 @@ async function initializeCamera() {
             }
         }
         
-        // Request camera access - use back camera (environment)
-        stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'environment' // Back camera
-            } 
-        });
+        // Request camera access - prefer back camera (environment)
+        try {
+            // Try back camera first
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment' // Back camera
+                } 
+            });
+        } catch (error) {
+            // Fallback to any available camera if back camera fails
+            console.warn('Back camera not available, trying any camera:', error);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
         
         video.srcObject = stream;
         captureBtn.disabled = false;
