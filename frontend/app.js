@@ -809,8 +809,61 @@ function resetScanner() {
 function resetToCamera() {
     hideProcessing();
     resultsSection.classList.add('hidden');
+    const homepageActions = document.getElementById('homepage-actions');
+    homepageActions.classList.add('hidden');
     cameraSection.classList.remove('hidden');
-    initializeCamera();
+    if (!stream) {
+        initializeCamera();
+    }
+}
+
+// Show contacts list
+async function showContactsList() {
+    try {
+        const homepageActions = document.getElementById('homepage-actions');
+        homepageActions.classList.add('hidden');
+        cameraSection.classList.add('hidden');
+        resultsSection.classList.add('hidden');
+        contactsSection.classList.remove('hidden');
+        
+        contactsList.innerHTML = '<p>Loading contacts...</p>';
+        
+        const response = await fetch(`${API_BASE_URL}/api/contacts`);
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to load contacts');
+        }
+        
+        if (result.contacts && result.contacts.length > 0) {
+            contactsList.innerHTML = result.contacts.map(contact => `
+                <div class="contact-card">
+                    <h3>${contact.name || 'Unknown'}</h3>
+                    <p><strong>Organisation:</strong> ${contact.organisation || 'N/A'}</p>
+                    <p><strong>Designation:</strong> ${contact.designation || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${contact.email_id || 'N/A'}</p>
+                    <p><strong>Mobile:</strong> ${contact.mobile_number || 'N/A'}</p>
+                    <p><strong>Landline:</strong> ${contact.landline_number || 'N/A'}</p>
+                    <p class="contact-meta">Saved: ${new Date(contact.created_at).toLocaleDateString()}</p>
+                </div>
+            `).join('');
+        } else {
+            contactsList.innerHTML = '<p>No contacts saved yet.</p>';
+        }
+        
+    } catch (error) {
+        console.error('Load contacts error:', error);
+        contactsList.innerHTML = `<p class="error">Failed to load contacts: ${error.message}</p>`;
+    }
+}
+
+// Hide contacts list
+function hideContactsList() {
+    const homepageActions = document.getElementById('homepage-actions');
+    contactsSection.classList.add('hidden');
+    cameraSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    homepageActions.classList.remove('hidden');
 }
 
 // Show/hide sections
