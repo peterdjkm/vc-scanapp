@@ -39,21 +39,25 @@ def init_db(app: Flask):
     # Set database configuration BEFORE initializing SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['DATABASE_ENABLED'] = False  # Set to False initially
     
     # Initialize SQLAlchemy with the app (only when we have a valid URL)
     try:
         db.init_app(app)
-        app.config['DATABASE_ENABLED'] = True
         
-        # Create tables (with error handling)
+        # Test the connection by creating tables
         with app.app_context():
             db.create_all()
+            # Try a simple query to verify connection works
+            db.session.execute(db.text('SELECT 1'))
+            db.session.commit()
+        
+        app.config['DATABASE_ENABLED'] = True
         print("✅ Database initialized successfully")
     except Exception as e:
         print(f"⚠️  Database initialization failed: {str(e)}")
         print("   Continuing without database (extraction will still work)")
         app.config['DATABASE_ENABLED'] = False
-        # Remove the database URI to prevent bind key errors
-        if 'SQLALCHEMY_DATABASE_URI' in app.config:
-            del app.config['SQLALCHEMY_DATABASE_URI']
+        # Keep the URI but mark as disabled - this prevents bind key errors
+        # The URI stays so we can retry later if needed
 
