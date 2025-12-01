@@ -34,41 +34,38 @@ class VisionService:
             preprocess: Whether to preprocess images before OCR (default: True)
         """
         credentials_value = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-        credentials = None
         
         if credentials_value:
             # Check if it's a file path or JSON content
             if os.path.exists(credentials_value):
-                # It's a file path
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+                # It's a file path - use as is
+                pass  # Already set in environment
             else:
-                # It's likely JSON content (common in cloud deployments)
+                # It's likely JSON content (common in cloud deployments like Render.io)
                 try:
                     # Try to parse as JSON
                     if credentials_value.strip().startswith('{'):
-                        if OAUTH2_AVAILABLE:
-                            creds_dict = json.loads(credentials_value)
-                            credentials = service_account.Credentials.from_service_account_info(creds_dict)
-                        else:
-                            # Fallback: write to temp file
-                            import tempfile
-                            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                                f.write(credentials_value)
-                                temp_path = f.name
-                            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = temp_path
+                        # Parse JSON to validate
+                        creds_dict = json.loads(credentials_value)
+                        
+                        # Write to temporary file (Google client expects file path)
+                        import tempfile
+                        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                            json.dump(creds_dict, f)
+                            temp_path = f.name
+                        
+                        # Update environment variable to point to temp file
+                        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = temp_path
+                        print(f"✅ Credentials loaded from JSON environment variable")
                     else:
-                        # Might be a file path that doesn't exist yet, try to use it anyway
-                        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+                        # Might be a file path that doesn't exist yet
+                        print(f"⚠️  Credentials value doesn't look like JSON or existing file path")
                 except (json.JSONDecodeError, ValueError) as e:
                     # Not valid JSON, treat as file path
-                    print(f"Warning: Could not parse credentials as JSON: {e}")
-                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
+                    print(f"⚠️  Could not parse credentials as JSON, treating as file path: {e}")
         
-        # Initialize client with credentials if we have them, otherwise use default
-        if credentials and OAUTH2_AVAILABLE:
-            self.client = vision.ImageAnnotatorClient(credentials=credentials)
-        else:
-            self.client = vision.ImageAnnotatorClient()
+        # Initialize client (will use GOOGLE_APPLICATION_CREDENTIALS from environment)
+        self.client = vision.ImageAnnotatorClient()
         
         self.preprocessor = ImagePreprocessor() if (preprocess and PREPROCESSOR_AVAILABLE) else None
     
