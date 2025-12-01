@@ -515,19 +515,42 @@ function setupEventListeners() {
 
 // Capture image from camera
 function captureImage() {
-    const context = canvas.getContext('2d');
-    
-    // Use video's natural dimensions
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw video to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Convert to blob
-    canvas.toBlob((blob) => {
-        processImage(blob);
-    }, 'image/jpeg', 0.9);
+    try {
+        // Check if video is ready
+        if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            console.error('Video not ready:', video?.readyState);
+            showError('Camera not ready. Please wait a moment and try again.');
+            return;
+        }
+        
+        // Stop border detection during capture
+        stopBorderDetection();
+        
+        const context = canvas.getContext('2d');
+        
+        // Use video's natural dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        console.log('Capturing image:', canvas.width, 'x', canvas.height);
+        
+        // Draw video to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to blob
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                console.error('Failed to create blob from canvas');
+                showError('Failed to capture image. Please try again.');
+                return;
+            }
+            console.log('Image captured, size:', blob.size, 'bytes');
+            processImage(blob);
+        }, 'image/jpeg', 0.9);
+    } catch (error) {
+        console.error('Capture error:', error);
+        showError('Failed to capture image: ' + error.message);
+    }
 }
 
 // Handle file upload
@@ -556,6 +579,7 @@ async function processImage(imageFile) {
         currentImageData = base64;
         
         // Send to API
+        console.log('Sending image to API...', `${API_BASE_URL}/api/process-card`);
         const response = await fetch(`${API_BASE_URL}/api/process-card`, {
             method: 'POST',
             headers: {
@@ -567,21 +591,32 @@ async function processImage(imageFile) {
             })
         });
         
+        console.log('API Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to process image');
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+            }
+            console.error('API Error:', errorData);
+            throw new Error(errorData.error || `Failed to process image (${response.status})`);
         }
         
         const data = await response.json();
+        console.log('API Response data:', data);
         
         if (data.success) {
             displayResults(data);
         } else {
+            console.error('API returned success=false:', data);
             throw new Error(data.error || 'Processing failed');
         }
         
     } catch (error) {
         console.error('Processing error:', error);
+        console.error('Error stack:', error.stack);
         showError(error.message || 'Failed to process image. Please try again.');
         resetToCamera();
     }
@@ -635,7 +670,14 @@ function displayResults(data) {
     // Show results section
     hideProcessing();
     resultsSection.classList.remove('hidden');
-    resultsSection.scrollIntoView({ behavior: 'smooth' });
+    cameraSection.classList.add('hidden');
+    
+    // Scroll to results
+    setTimeout(() => {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    
+    console.log('Results displayed successfully');
 }
 
 // Populate field with data
