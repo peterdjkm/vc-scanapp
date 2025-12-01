@@ -57,8 +57,14 @@ def find_duplicates(contact_data, user_id='default', threshold=0.85):
     if not contact_data:
         return []
     
-    # Get all contacts for this user
-    existing_contacts = Contact.query.filter_by(user_id=user_id).all()
+    # Check if database is available
+    try:
+        # Get all contacts for this user
+        existing_contacts = Contact.query.filter_by(user_id=user_id).all()
+    except Exception as e:
+        # Database not available or query failed
+        print(f"⚠️  Duplicate detection skipped: {str(e)}")
+        return []
     
     duplicates = []
     
