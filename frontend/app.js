@@ -950,6 +950,12 @@ function resetScanner() {
     // Reset file input
     fileInput.value = '';
     
+    // Reset edit mode
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.textContent = '💾 Save Contact';
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.removeAttribute('data-contact-id');
+    
     // Hide sections
     const homepageActions = document.getElementById('homepage-actions');
     resultsSection.classList.add('hidden');
