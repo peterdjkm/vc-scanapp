@@ -53,8 +53,8 @@ let pendingContactData = null; // Store contact data pending save
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initializeCamera();
     setupEventListeners();
+    // Don't auto-initialize camera - wait for user to click "Scan New Card"
 });
 
 // Initialize camera
@@ -505,6 +505,7 @@ function setupEventListeners() {
     
     document.getElementById('save-btn').addEventListener('click', saveContact);
     document.getElementById('retry-btn').addEventListener('click', resetScanner);
+    document.getElementById('scan-card-btn').addEventListener('click', showCamera);
     document.getElementById('view-contacts-btn').addEventListener('click', showContactsList);
     document.getElementById('close-contacts-btn').addEventListener('click', hideContactsList);
     

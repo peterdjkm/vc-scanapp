@@ -42,6 +42,20 @@ header {
     box-shadow: var(--shadow);
 }
 
+/* Homepage Actions */
+.homepage-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    min-width: 200px;
+}
+
 header h1 {
     font-size: 1.75rem;
     color: var(--primary-color);

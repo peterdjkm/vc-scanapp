@@ -24,13 +24,22 @@
         <header>
             <h1>📇 Visiting Card Scanner</h1>
             <p class="subtitle">Capture and extract contact information</p>
-            <button id="view-contacts-btn" class="btn btn-secondary" style="margin-top: 0.5rem;">
-                📋 View Contacts
-            </button>
         </header>
 
+        <!-- Homepage Actions -->
+        <section id="homepage-actions" class="section">
+            <div class="homepage-buttons">
+                <button id="scan-card-btn" class="btn btn-primary btn-large">
+                    📷 Scan New Card
+                </button>
+                <button id="view-contacts-btn" class="btn btn-secondary btn-large">
+                    📋 Browse Contacts
+                </button>
+            </div>
+        </section>
+
         <!-- Camera Section -->
-        <section id="camera-section" class="section">
+        <section id="camera-section" class="section hidden">
             <div class="camera-container">
                 <video id="video" autoplay playsinline muted></video>
                 <canvas id="canvas" style="display: none;"></canvas>
