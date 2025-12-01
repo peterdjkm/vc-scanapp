@@ -789,6 +789,131 @@ async function saveContact() {
     }
 }
 
+// Show duplicate modal
+function showDuplicateModal(duplicate, newContactData) {
+    currentDuplicateInfo = duplicate;
+    
+    const existing = duplicate.contact;
+    const similarity = (duplicate.similarity * 100).toFixed(0);
+    const matchReasons = duplicate.match_reasons.join(', ');
+    
+    duplicateInfo.innerHTML = `
+        <div class="duplicate-comparison">
+            <div class="existing-contact">
+                <h4>Existing Contact:</h4>
+                <p><strong>Name:</strong> ${existing.name || 'N/A'}</p>
+                <p><strong>Organisation:</strong> ${existing.organisation || 'N/A'}</p>
+                <p><strong>Email:</strong> ${existing.email_id || 'N/A'}</p>
+                <p><strong>Mobile:</strong> ${existing.mobile_number || 'N/A'}</p>
+                <p><strong>Designation:</strong> ${existing.designation || 'N/A'}</p>
+            </div>
+            <div class="new-contact">
+                <h4>New Contact:</h4>
+                <p><strong>Name:</strong> ${newContactData.name || 'N/A'}</p>
+                <p><strong>Organisation:</strong> ${newContactData.organisation || 'N/A'}</p>
+                <p><strong>Email:</strong> ${newContactData.email_id || 'N/A'}</p>
+                <p><strong>Mobile:</strong> ${newContactData.mobile_number || 'N/A'}</p>
+                <p><strong>Designation:</strong> ${newContactData.designation || 'N/A'}</p>
+            </div>
+        </div>
+        <p class="similarity-info">Similarity: ${similarity}% (matched by: ${matchReasons})</p>
+    `;
+    
+    duplicateModal.classList.remove('hidden');
+}
+
+// Overwrite existing contact
+async function overwriteContact() {
+    if (!currentDuplicateInfo || !pendingContactData) return;
+    
+    const existingId = currentDuplicateInfo.contact.id;
+    const updateData = { 
+        ...pendingContactData, 
+        id: existingId  // Include ID to update existing contact
+    };
+    
+    try {
+        showProcessing();
+        duplicateModal.classList.add('hidden');
+        
+        const response = await fetch(`${API_BASE_URL}/api/contacts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update contact');
+        }
+        
+        hideProcessing();
+        showSuccess('Contact updated successfully!');
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            resetScanner();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Update error:', error);
+        showError(error.message || 'Failed to update contact');
+        hideProcessing();
+    }
+}
+
+// Save as new contact (bypass duplicate check)
+async function saveAsNewContact() {
+    if (!pendingContactData) return;
+    
+    // Add flag to bypass duplicate check and create a new contact
+    const newData = {
+        ...pendingContactData,
+        _force_new: true  // This tells the backend to skip duplicate detection
+    };
+    
+    try {
+        showProcessing();
+        duplicateModal.classList.add('hidden');
+        
+        const response = await fetch(`${API_BASE_URL}/api/contacts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to save contact');
+        }
+        
+        hideProcessing();
+        showSuccess('Contact saved as new!');
+        
+        setTimeout(() => {
+            resetScanner();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Save error:', error);
+        showError(error.message || 'Failed to save contact');
+        hideProcessing();
+    }
+}
+
+// Cancel save
+function cancelSave() {
+    duplicateModal.classList.add('hidden');
+    currentDuplicateInfo = null;
+    pendingContactData = null;
+}
+
 // Reset scanner - return to homepage
 function resetScanner() {
     // Clear fields
