@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, current_app
 import uuid
 from utils.database import db
 from models.contact import Contact
+from utils.duplicate_detector import is_duplicate, find_duplicates
 import os
 
 contacts_bp = Blueprint('contacts', __name__)
@@ -90,7 +91,7 @@ def get_contact(contact_id):
 @contacts_bp.route('/contacts', methods=['POST'])
 def save_contact():
     """
-    Save or update contact
+    Save or update contact with duplicate detection
     
     Request body:
         {
@@ -118,6 +119,7 @@ def save_contact():
                 'error': 'No data provided'
             }), 400
         
+        user_id = data.get('user_id', 'default')
         contact_id = data.get('id')
         
         if contact_id:
@@ -129,6 +131,20 @@ def save_contact():
                     'error': 'Contact not found'
                 }), 404
         else:
+            # Check for duplicates before creating new contact
+            is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
+            
+            if is_dup:
+                # Return duplicate information - let frontend decide what to do
+                return jsonify({
+                    'success': False,
+                    'error': 'Duplicate contact detected',
+                    'is_duplicate': True,
+                    'duplicate': duplicate_info,
+                    'message': f"Similar contact found: {duplicate_info['contact'].get('name', 'Unknown')} "
+                              f"(similarity: {duplicate_info['similarity']:.1%})"
+                }), 409  # 409 Conflict
+            
             # Create new contact
             contact = Contact(id=str(uuid.uuid4()))
             db.session.add(contact)
@@ -143,7 +159,8 @@ def save_contact():
         
         return jsonify({
             'success': True,
-            'contact': contact.to_dict()
+            'contact': contact.to_dict(),
+            'is_duplicate': False
         }), 200
     
     except Exception as e:
