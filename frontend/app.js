@@ -771,7 +771,7 @@ async function saveContact() {
     }
 }
 
-// Reset scanner
+// Reset scanner - return to homepage
 function resetScanner() {
     // Clear fields
     nameInput.value = '';
@@ -786,14 +786,23 @@ function resetScanner() {
     fileInput.value = '';
     
     // Hide sections
+    const homepageActions = document.getElementById('homepage-actions');
     resultsSection.classList.add('hidden');
     processingSection.classList.add('hidden');
+    cameraSection.classList.add('hidden');
+    contactsSection.classList.add('hidden');
     hideSuccess();
     hideError();
     
-    // Reinitialize camera and detection
-    initializeCamera();
-    cameraSection.classList.remove('hidden');
+    // Stop camera
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    stopBorderDetection();
+    
+    // Show homepage
+    homepageActions.classList.remove('hidden');
 }
 
 // Reset to camera view
