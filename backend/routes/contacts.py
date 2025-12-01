@@ -123,6 +123,7 @@ def save_contact():
         
         user_id = data.get('user_id', 'default')
         contact_id = data.get('id')
+        force_new = data.get('_force_new', False)  # Flag to bypass duplicate check
         
         if contact_id:
             # Update existing contact
@@ -133,19 +134,20 @@ def save_contact():
                     'error': 'Contact not found'
                 }), 404
         else:
-            # Check for duplicates before creating new contact
-            is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
-            
-            if is_dup:
-                # Return duplicate information - let frontend decide what to do
-                return jsonify({
-                    'success': False,
-                    'error': 'Duplicate contact detected',
-                    'is_duplicate': True,
-                    'duplicate': duplicate_info,
-                    'message': f"Similar contact found: {duplicate_info['contact'].get('name', 'Unknown')} "
-                              f"(similarity: {duplicate_info['similarity']:.1%})"
-                }), 409  # 409 Conflict
+            # Check for duplicates before creating new contact (unless force_new is True)
+            if not force_new:
+                is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
+                
+                if is_dup:
+                    # Return duplicate information - let frontend decide what to do
+                    return jsonify({
+                        'success': False,
+                        'error': 'Duplicate contact detected',
+                        'is_duplicate': True,
+                        'duplicate': duplicate_info,
+                        'message': f"Similar contact found: {duplicate_info['contact'].get('name', 'Unknown')} "
+                                  f"(similarity: {duplicate_info['similarity']:.1%})"
+                    }), 409  # 409 Conflict
             
             # Create new contact
             contact = Contact(id=str(uuid.uuid4()))
