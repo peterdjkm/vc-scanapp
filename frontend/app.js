@@ -68,8 +68,12 @@ async function initializeCamera() {
             }
         }
         
-        // Request camera access - simplest possible
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Request camera access - use back camera (environment)
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment' // Back camera
+            } 
+        });
         
         video.srcObject = stream;
         captureBtn.disabled = false;
