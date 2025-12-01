@@ -22,13 +22,11 @@ def init_db(app: Flask):
     
     # Skip database if SAVE_TO_DB is false or no DATABASE_URL
     if not save_to_db:
-        app.config['SQLALCHEMY_DATABASE_URI'] = None
         app.config['DATABASE_ENABLED'] = False
         print("⚠️  Database disabled: SAVE_TO_DB is not 'true'")
         return
     
     if not database_url:
-        app.config['SQLALCHEMY_DATABASE_URI'] = None
         app.config['DATABASE_ENABLED'] = False
         print("⚠️  Database disabled: DATABASE_URL environment variable not set")
         print("   💡 On Render.io: Link the Postgres database to this service, or set DATABASE_URL manually")
@@ -38,10 +36,12 @@ def init_db(app: Flask):
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
+    # Set database configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['DATABASE_ENABLED'] = True
     
+    # Initialize SQLAlchemy with the app
     db.init_app(app)
     
     # Create tables (with error handling)
@@ -53,4 +53,6 @@ def init_db(app: Flask):
         print(f"⚠️  Database initialization failed: {str(e)}")
         print("   Continuing without database (extraction will still work)")
         app.config['DATABASE_ENABLED'] = False
+        # Don't set SQLALCHEMY_DATABASE_URI to None - just leave it unset
+        # This prevents the bind key error
 

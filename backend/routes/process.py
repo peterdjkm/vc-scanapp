@@ -88,8 +88,10 @@ def process_card():
         # Save to database (optional - can be disabled for testing)
         save_to_db = os.getenv('SAVE_TO_DB', 'false').lower() == 'true'
         database_enabled = current_app.config.get('DATABASE_ENABLED', False)
+        database_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
         
-        if save_to_db and database_enabled:
+        # Only save if database is properly configured
+        if save_to_db and database_enabled and database_uri:
             # Create contact record
             contact = Contact(
                 id=contact_id,

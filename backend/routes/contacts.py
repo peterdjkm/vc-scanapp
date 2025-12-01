@@ -102,9 +102,11 @@ def save_contact():
             ...
         }
     """
-    # Check if database is enabled
+    # Check if database is enabled and properly configured
     database_enabled = current_app.config.get('DATABASE_ENABLED', False)
-    if not database_enabled:
+    database_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
+    
+    if not database_enabled or not database_uri:
         return jsonify({
             'success': False,
             'error': 'Database disabled - cannot save contacts'
