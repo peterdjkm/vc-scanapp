@@ -2,11 +2,16 @@
 Google Vision API service for OCR
 """
 from google.cloud import vision
-from google.oauth2 import service_account
+try:
+    from google.oauth2 import service_account
+    OAUTH2_AVAILABLE = True
+except ImportError:
+    OAUTH2_AVAILABLE = False
+    service_account = None
+
 import os
 import json
 import base64
-import tempfile
 from io import BytesIO
 from PIL import Image
 
@@ -41,17 +46,26 @@ class VisionService:
                 try:
                     # Try to parse as JSON
                     if credentials_value.strip().startswith('{'):
-                        creds_dict = json.loads(credentials_value)
-                        credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                        if OAUTH2_AVAILABLE:
+                            creds_dict = json.loads(credentials_value)
+                            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                        else:
+                            # Fallback: write to temp file
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                                f.write(credentials_value)
+                                temp_path = f.name
+                            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = temp_path
                     else:
                         # Might be a file path that doesn't exist yet, try to use it anyway
                         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
-                except (json.JSONDecodeError, ValueError):
+                except (json.JSONDecodeError, ValueError) as e:
                     # Not valid JSON, treat as file path
+                    print(f"Warning: Could not parse credentials as JSON: {e}")
                     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_value
         
         # Initialize client with credentials if we have them, otherwise use default
-        if credentials:
+        if credentials and OAUTH2_AVAILABLE:
             self.client = vision.ImageAnnotatorClient(credentials=credentials)
         else:
             self.client = vision.ImageAnnotatorClient()
