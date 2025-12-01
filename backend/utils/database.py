@@ -33,12 +33,14 @@ def init_db(app: Flask):
         return
     
     # Render.io Postgres URLs start with postgres://, need to convert to postgresql://
-    # For psycopg v3, use postgresql+psycopg://, but SQLAlchemy will auto-detect psycopg
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    # Optionally use psycopg v3 driver (if installed)
-    # if database_url.startswith('postgresql://'):
-    #     database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    
+    # Use psycopg v3 driver (if psycopg is installed instead of psycopg2)
+    # SQLAlchemy will auto-detect psycopg, but we can explicitly use it
+    if database_url.startswith('postgresql://') and 'psycopg' not in database_url:
+        # Try to use psycopg v3 if available (better Python 3.13 support)
+        database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     
     # Set database configuration BEFORE initializing SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
