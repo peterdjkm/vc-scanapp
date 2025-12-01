@@ -42,19 +42,20 @@ def serve_static(path):
 
 @app.route('/api/health')
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with database status"""
+    database_enabled = app.config.get('DATABASE_ENABLED', False)
+    save_to_db = os.getenv('SAVE_TO_DB', 'false').lower() == 'true'
+    database_url = os.getenv('DATABASE_URL')
+    
     return {
         'status': 'healthy',
         'service': 'visiting-card-scanner-api',
-        'version': '1.0.0'
-    }
-
-@app.route('/api/health')
-def api_health():
-    """API health check"""
-    return {
-        'status': 'ok',
-        'message': 'API is running'
+        'version': '1.0.0',
+        'database': {
+            'enabled': database_enabled,
+            'save_to_db_setting': save_to_db,
+            'database_url_set': bool(database_url)
+        }
     }
 
 if __name__ == '__main__':
