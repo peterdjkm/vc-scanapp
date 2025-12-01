@@ -92,47 +92,53 @@ def process_card():
         
         # Only save if database is properly configured
         if save_to_db and database_enabled and database_uri:
-            # Create contact record
-            contact = Contact(
-                id=contact_id,
-                user_id=user_id,
-                name=parse_result['extracted_data'].get('name', {}).get('value'),
-                organisation=parse_result['extracted_data'].get('organisation', {}).get('value'),
-                mobile_number=parse_result['extracted_data'].get('mobile_number', {}).get('value'),
-                landline_number=parse_result['extracted_data'].get('landline_number', {}).get('value'),
-                email_id=parse_result['extracted_data'].get('email_id', {}).get('value'),
-                designation=parse_result['extracted_data'].get('designation', {}).get('value'),
-                raw_text=raw_text,
-                overall_confidence=parse_result['overall_confidence']
-            )
-            
-            db.session.add(contact)
-            db.session.flush()
-            
-            # Save extraction results
-            for field_name, field_data in parse_result['extracted_data'].items():
-                extraction_result = ExtractionResult(
-                    contact_id=contact_id,
-                    field_name=field_name,
-                    extracted_value=field_data.get('value'),
-                    confidence=field_data.get('confidence'),
-                    extraction_method=field_data.get('source'),
-                    source_line=None  # Can be enhanced later
+            try:
+                # Create contact record
+                contact = Contact(
+                    id=contact_id,
+                    user_id=user_id,
+                    name=parse_result['extracted_data'].get('name', {}).get('value'),
+                    organisation=parse_result['extracted_data'].get('organisation', {}).get('value'),
+                    mobile_number=parse_result['extracted_data'].get('mobile_number', {}).get('value'),
+                    landline_number=parse_result['extracted_data'].get('landline_number', {}).get('value'),
+                    email_id=parse_result['extracted_data'].get('email_id', {}).get('value'),
+                    designation=parse_result['extracted_data'].get('designation', {}).get('value'),
+                    raw_text=raw_text,
+                    overall_confidence=parse_result['overall_confidence']
                 )
-                db.session.add(extraction_result)
-            
-            # Save confidence metrics
-            confidence_metric = ConfidenceMetric(
-                contact_id=contact_id,
-                overall_confidence=parse_result['overall_confidence'],
-                field_detection_rate=len(parse_result['parsing_metadata']['detected_fields']) / len(parser.ALL_FIELDS),
-                field_accuracy=None,  # Will be calculated after manual validation
-                missing_fields=parse_result['parsing_metadata']['missing_fields'],
-                detected_fields=parse_result['parsing_metadata']['detected_fields']
-            )
-            db.session.add(confidence_metric)
-            
-            db.session.commit()
+                
+                db.session.add(contact)
+                db.session.flush()
+                
+                # Save extraction results
+                for field_name, field_data in parse_result['extracted_data'].items():
+                    extraction_result = ExtractionResult(
+                        contact_id=contact_id,
+                        field_name=field_name,
+                        extracted_value=field_data.get('value'),
+                        confidence=field_data.get('confidence'),
+                        extraction_method=field_data.get('source'),
+                        source_line=None  # Can be enhanced later
+                    )
+                    db.session.add(extraction_result)
+                
+                # Save confidence metrics
+                confidence_metric = ConfidenceMetric(
+                    contact_id=contact_id,
+                    overall_confidence=parse_result['overall_confidence'],
+                    field_detection_rate=len(parse_result['parsing_metadata']['detected_fields']) / len(parser.ALL_FIELDS),
+                    field_accuracy=None,  # Will be calculated after manual validation
+                    missing_fields=parse_result['parsing_metadata']['missing_fields'],
+                    detected_fields=parse_result['parsing_metadata']['detected_fields']
+                )
+                db.session.add(confidence_metric)
+                
+                db.session.commit()
+            except Exception as db_error:
+                # Log database error but don't fail the request
+                print(f"⚠️  Database save failed: {str(db_error)}")
+                db.session.rollback()
+                # Continue without saving to database
         
         # Prepare response
         response = {

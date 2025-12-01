@@ -36,16 +36,16 @@ def init_db(app: Flask):
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # Set database configuration
+    # Set database configuration BEFORE initializing SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['DATABASE_ENABLED'] = True
     
-    # Initialize SQLAlchemy with the app
-    db.init_app(app)
-    
-    # Create tables (with error handling)
+    # Initialize SQLAlchemy with the app (only when we have a valid URL)
     try:
+        db.init_app(app)
+        app.config['DATABASE_ENABLED'] = True
+        
+        # Create tables (with error handling)
         with app.app_context():
             db.create_all()
         print("✅ Database initialized successfully")
@@ -53,6 +53,7 @@ def init_db(app: Flask):
         print(f"⚠️  Database initialization failed: {str(e)}")
         print("   Continuing without database (extraction will still work)")
         app.config['DATABASE_ENABLED'] = False
-        # Don't set SQLALCHEMY_DATABASE_URI to None - just leave it unset
-        # This prevents the bind key error
+        # Remove the database URI to prevent bind key errors
+        if 'SQLALCHEMY_DATABASE_URI' in app.config:
+            del app.config['SQLALCHEMY_DATABASE_URI']
 
