@@ -11,10 +11,6 @@ const captureBtn = document.getElementById('capture-btn');
 const scanFrameElement = document.querySelector('.scan-frame');
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
-const cameraSection = document.getElementById('camera-section');
-const processingSection = document.getElementById('processing-section');
-const resultsSection = document.getElementById('results-section');
-const contactsSection = document.getElementById('contacts-section');
 const contactsList = document.getElementById('contacts-list');
 const successMessage = document.getElementById('success-message');
 const errorMessage = document.getElementById('error-message');
@@ -59,20 +55,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Show camera section
 function showCamera() {
-    const homepageActions = document.getElementById('homepage-actions');
-    const cameraSection = document.getElementById('camera-section');
-    const resultsSection = document.getElementById('results-section');
-    const contactsSection = document.getElementById('contacts-section');
-    const authSection = document.getElementById('auth-section');
-    
-    homepageActions.classList.add('hidden');
-    contactsSection.classList.add('hidden');
-    resultsSection.classList.add('hidden');
-    authSection.classList.add('hidden');
-    cameraSection.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('camera-section');
     
     if (!stream) {
         initializeCamera();
+    }
+}
+
+// Screen management functions
+function hideAllScreens() {
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+        screen.classList.add('hidden');
+    });
+}
+
+function showScreen(screenId) {
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        hideAllScreens();
+        screen.classList.remove('hidden');
+        screen.classList.add('active');
     }
 }
 
@@ -665,12 +669,8 @@ function displayResults(data) {
     extractionMethodDisplay.textContent = `Method: ${method} | Confidence: ${(data.overall_confidence * 100).toFixed(1)}%`;
     
     hideProcessing();
-    resultsSection.classList.remove('hidden');
-    cameraSection.classList.add('hidden');
-    
-    setTimeout(() => {
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    hideAllScreens();
+    showScreen('results-section');
 }
 
 // Populate field with data
@@ -916,11 +916,8 @@ function resetScanner() {
     saveBtn.removeAttribute('data-edit-mode');
     saveBtn.removeAttribute('data-contact-id');
     
-    const homepageActions = document.getElementById('homepage-actions');
-    resultsSection.classList.add('hidden');
-    processingSection.classList.add('hidden');
-    cameraSection.classList.add('hidden');
-    contactsSection.classList.add('hidden');
+    hideAllScreens();
+    showScreen('homepage-actions');
     hideSuccess();
     hideError();
     
@@ -929,17 +926,13 @@ function resetScanner() {
         stream = null;
     }
     stopBorderDetection();
-    
-    homepageActions.classList.remove('hidden');
 }
 
 // Reset to camera view
 function resetToCamera() {
     hideProcessing();
-    resultsSection.classList.add('hidden');
-    const homepageActions = document.getElementById('homepage-actions');
-    homepageActions.classList.add('hidden');
-    cameraSection.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('camera-section');
     if (!stream) {
         initializeCamera();
     }
@@ -948,11 +941,8 @@ function resetToCamera() {
 // Show contacts list
 async function showContactsList() {
     try {
-        const homepageActions = document.getElementById('homepage-actions');
-        homepageActions.classList.add('hidden');
-        cameraSection.classList.add('hidden');
-        resultsSection.classList.add('hidden');
-        contactsSection.classList.remove('hidden');
+        hideAllScreens();
+        showScreen('contacts-section');
         
         contactsList.innerHTML = '<p>Loading contacts...</p>';
         
@@ -980,25 +970,15 @@ async function showContactsList() {
 
 // Hide contacts list
 function hideContactsList() {
-    const homepageActions = document.getElementById('homepage-actions');
-    const authSection = document.getElementById('auth-section');
-    contactsSection.classList.add('hidden');
-    cameraSection.classList.add('hidden');
-    resultsSection.classList.add('hidden');
-    authSection.classList.add('hidden');
-    homepageActions.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('homepage-actions');
     contactsSearch.value = '';
 }
 
 // Show auth section
 function showAuthSection() {
-    const homepageActions = document.getElementById('homepage-actions');
-    const authSection = document.getElementById('auth-section');
-    homepageActions.classList.add('hidden');
-    cameraSection.classList.add('hidden');
-    resultsSection.classList.add('hidden');
-    contactsSection.classList.add('hidden');
-    authSection.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('auth-section');
     switchAuthTab('login');
 }
 
@@ -1048,10 +1028,8 @@ async function handleRegister() {
 
 // Hide auth section
 function hideAuthSection() {
-    const homepageActions = document.getElementById('homepage-actions');
-    const authSection = document.getElementById('auth-section');
-    authSection.classList.add('hidden');
-    homepageActions.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('homepage-actions');
 }
 
 // Load total cards count
@@ -1191,29 +1169,23 @@ async function editContact(contactId) {
     emailInput.value = contact.email_id || '';
     designationInput.value = contact.designation || '';
     
-    const homepageActions = document.getElementById('homepage-actions');
-    homepageActions.classList.add('hidden');
-    contactsSection.classList.add('hidden');
-    cameraSection.classList.add('hidden');
-    resultsSection.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('results-section');
     
     const saveBtn = document.getElementById('save-btn');
     saveBtn.textContent = '💾 Update Contact';
     saveBtn.setAttribute('data-edit-mode', 'true');
     saveBtn.setAttribute('data-contact-id', contactId);
-    
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Show/hide sections
 function showProcessing() {
-    cameraSection.classList.add('hidden');
-    resultsSection.classList.add('hidden');
-    processingSection.classList.remove('hidden');
+    hideAllScreens();
+    showScreen('processing-section');
 }
 
 function hideProcessing() {
-    processingSection.classList.add('hidden');
+    // Processing screen will be hidden when another screen is shown
 }
 
 function showSuccess(message) {
