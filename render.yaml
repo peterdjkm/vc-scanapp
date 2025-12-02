@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: visiting-card-scanner-mvp
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: visiting-cards-db
+          property: connectionString
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SAVE_TO_DB
+        value: "true"
+      - key: USE_LLM_FALLBACK
+        value: "true"
+      - key: LLM_CONFIDENCE_THRESHOLD
+        value: "0.95"
+      - key: PORT
+        value: "5000"
+
+databases:
+  - name: visiting-cards-db
+    plan: starter
+    databaseName: visiting_cards
+    user: visiting_cards_user
+
