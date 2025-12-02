@@ -292,11 +292,12 @@ footer {
 
 .progress {
     height: 4px;
-    max-width: 210px;
+    width: 100%;
     margin: 0 auto;
     border-radius: 999px;
     overflow: hidden;
     display: flex;
+    background: transparent;
 }
 
 .progress > div {
