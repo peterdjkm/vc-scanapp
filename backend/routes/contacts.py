@@ -162,9 +162,6 @@ def save_contact():
         contact_id = data.get('id')
         force_new = data.get('_force_new', False)  # Flag to bypass duplicate check
         
-        # Log for debugging
-        current_app.logger.info(f"Save contact request: user_id={user_id}, contact_id={contact_id}, force_new={force_new}")
-        
         if contact_id:
             # Update existing contact
             contact = Contact.query.get(contact_id)
@@ -178,11 +175,9 @@ def save_contact():
             if not force_new:
                 try:
                     is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
-                    current_app.logger.info(f"Duplicate check: is_dup={is_dup}, user_id={user_id}")
                     
                     if is_dup:
                         # Return duplicate information - let frontend decide what to do
-                        current_app.logger.warning(f"Duplicate detected: {duplicate_info.get('contact', {}).get('name', 'Unknown')}")
                         return jsonify({
                             'success': False,
                             'error': 'Duplicate contact detected',
@@ -200,8 +195,6 @@ def save_contact():
                     }), 500
             
             # Only create new contact if no duplicate was found (or force_new is True)
-            # This code should NEVER execute if a duplicate was detected above
-            current_app.logger.info(f"Creating new contact: force_new={force_new}, name={data.get('name', 'N/A')}")
             contact = Contact(id=str(uuid.uuid4()))
             db.session.add(contact)
         

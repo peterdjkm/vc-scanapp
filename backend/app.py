@@ -59,6 +59,7 @@ def health_check():
     }
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5001))  # Changed default to 5001 to avoid AirPlay conflict
-    app.run(host='0.0.0.0', port=port, debug=True)
+    port = int(os.getenv('PORT', 5001))
+    debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
 

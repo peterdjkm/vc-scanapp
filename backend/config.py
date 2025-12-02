@@ -2,7 +2,6 @@
 Configuration settings
 """
 import os
-from pathlib import Path
 
 class Config:
     """Base configuration"""
@@ -11,22 +10,13 @@ class Config:
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     
-    # File storage
-    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
-    MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
-    
     # Confidence thresholds
     MIN_FIELD_CONFIDENCE = 0.70
-    TARGET_OVERALL_CONFIDENCE = 0.95
-    TARGET_ACCURACY = 0.97
     
     # LLM settings (Gemini)
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     USE_LLM_FALLBACK = os.getenv('USE_LLM_FALLBACK', 'true').lower() == 'true'
     LLM_CONFIDENCE_THRESHOLD = float(os.getenv('LLM_CONFIDENCE_THRESHOLD', '0.95'))
-    
-    # Field extraction settings
-    SUPPORTED_IMAGE_FORMATS = {'image/jpeg', 'image/jpg', 'image/png', 'image/webp'}
 
 class DevelopmentConfig(Config):
     """Development configuration"""

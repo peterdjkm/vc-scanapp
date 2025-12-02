@@ -1,9 +1,7 @@
-// Configuration
-// In production, use relative URLs (same domain)
-// In development, use localhost
+// API Configuration
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5001' 
-    : ''; // Empty string = same origin
+    : '';
 
 // DOM Elements
 const video = document.getElementById('video');
@@ -43,6 +41,7 @@ const extractionMethodDisplay = document.getElementById('extraction-method');
 // State
 let stream = null;
 let currentImageData = null;
+let capturedImageBlob = null; // Store captured image blob for preview
 let detectionContext = null;
 let detectionActive = false;
 let lastDetectedBounds = null;
@@ -55,7 +54,6 @@ let pendingContactData = null; // Store contact data pending save
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-    // Don't auto-initialize camera - wait for user to click "Scan New Card"
 });
 
 // Show camera section
@@ -70,7 +68,6 @@ function showCamera() {
     resultsSection.classList.add('hidden');
     cameraSection.classList.remove('hidden');
     
-    // Initialize camera when showing camera section
     if (!stream) {
         initializeCamera();
     }
@@ -79,9 +76,7 @@ function showCamera() {
 // Initialize camera
 async function initializeCamera() {
     try {
-        // Check if getUserMedia is available
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            // iOS Safari requires HTTPS (except localhost)
             const isLocalhost = window.location.hostname === 'localhost' || 
                                window.location.hostname === '127.0.0.1';
             const isHTTPS = window.location.protocol === 'https:';
@@ -93,17 +88,11 @@ async function initializeCamera() {
             }
         }
         
-        // Request camera access - prefer back camera (environment)
         try {
-            // Try back camera first
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'environment' // Back camera
-                } 
+                video: { facingMode: 'environment' }
             });
         } catch (error) {
-            // Fallback to any available camera if back camera fails
-            console.warn('Back camera not available, trying any camera:', error);
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
@@ -111,23 +100,10 @@ async function initializeCamera() {
         captureBtn.disabled = false;
         hideError();
     } catch (error) {
-        // Log full error details for debugging
-        console.error('=== CAMERA ERROR ===');
-        console.error('Error object:', error);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        console.error('Protocol:', window.location.protocol);
-        console.error('Hostname:', window.location.hostname);
-        console.error('User Agent:', navigator.userAgent);
-        console.error('MediaDevices available:', !!navigator.mediaDevices);
-        console.error('getUserMedia available:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
-        console.error('===================');
+        console.error('Camera error:', error.name, error.message);
         
         let errorMsg = 'Camera access denied. ';
         
-        // Check for HTTPS requirement (iOS Safari)
         if (error.message === 'HTTPS_REQUIRED' || 
             (!navigator.mediaDevices && window.location.protocol !== 'https:' && 
              window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
@@ -171,7 +147,6 @@ function initializeBorderDetection() {
         // Start continuous border detection
         startBorderDetection();
     } catch (error) {
-        console.error('Border detection init error (non-blocking):', error);
         // Continue without detection - camera still works
     }
 }
@@ -196,7 +171,7 @@ function startBorderDetection() {
             try {
                 detectCardBorders();
             } catch (error) {
-                console.error('Border detection error (non-blocking):', error);
+                // Silently continue - border detection is non-critical
             }
             lastTime = currentTime;
         }
@@ -486,29 +461,14 @@ function findCardBounds(imageData, width, height) {
 function lockVideoOrientation() {
     if (!video || !stream) return;
     
-    // Get video track settings
     const videoTrack = stream.getVideoTracks()[0];
     if (!videoTrack) return;
     
-    const settings = videoTrack.getSettings();
-    const videoWidth = video.videoWidth || settings.width;
-    const videoHeight = video.videoHeight || settings.height;
-    
-    // Determine if video is naturally portrait or landscape
-    const isPortrait = videoHeight > videoWidth;
-    
-    // Force video to display in portrait orientation
-    // This prevents browser from auto-rotating based on device orientation
     video.style.transform = 'none';
     video.style.webkitTransform = 'none';
     video.style.mozTransform = 'none';
     video.style.msTransform = 'none';
     
-    // If video is naturally landscape, we need to rotate it to portrait
-    // But we want to keep it as-is (WYSIWYG), so we just lock the transform
-    // The CSS will handle keeping it in portrait orientation
-    
-    // Ensure container maintains aspect ratio
     const container = document.querySelector('.camera-container');
     if (container) {
         container.style.transform = 'none';
@@ -534,12 +494,10 @@ function setupEventListeners() {
     document.getElementById('save-new-btn').addEventListener('click', saveAsNewContact);
     document.getElementById('cancel-save-btn').addEventListener('click', cancelSave);
     
-    // Prevent orientation changes from affecting video
     window.addEventListener('orientationchange', () => {
         setTimeout(lockVideoOrientation, 100);
     });
     
-    // Also handle resize (some devices trigger resize instead of orientationchange)
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
@@ -550,39 +508,28 @@ function setupEventListeners() {
 // Capture image from camera
 function captureImage() {
     try {
-        // Check if video is ready
         if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
-            console.error('Video not ready:', video?.readyState);
             showError('Camera not ready. Please wait a moment and try again.');
             return;
         }
         
-        // Stop border detection during capture
         stopBorderDetection();
         
         const context = canvas.getContext('2d');
-        
-        // Use video's natural dimensions
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        console.log('Capturing image:', canvas.width, 'x', canvas.height);
-        
-        // Draw video to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert to blob
         canvas.toBlob((blob) => {
             if (!blob) {
-                console.error('Failed to create blob from canvas');
                 showError('Failed to capture image. Please try again.');
                 return;
             }
-            console.log('Image captured, size:', blob.size, 'bytes');
+            capturedImageBlob = blob; // Store for preview
             processImage(blob);
         }, 'image/jpeg', 0.9);
     } catch (error) {
-        console.error('Capture error:', error);
         showError('Failed to capture image: ' + error.message);
     }
 }
@@ -591,6 +538,7 @@ function captureImage() {
 function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
+        capturedImageBlob = file; // Store for preview
         processImage(file);
     }
 }
@@ -598,22 +546,17 @@ function handleFileUpload(event) {
 // Process image
 async function processImage(imageFile) {
     try {
-        // Stop camera stream
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
         
-        // Show processing
         showProcessing();
         hideError();
         hideSuccess();
         
-        // Convert to base64
         const base64 = await fileToBase64(imageFile);
         currentImageData = base64;
         
-        // Send to API
-        console.log('Sending image to API...', `${API_BASE_URL}/api/process-card`);
         const response = await fetch(`${API_BASE_URL}/api/process-card`, {
             method: 'POST',
             headers: {
@@ -625,8 +568,6 @@ async function processImage(imageFile) {
             })
         });
         
-        console.log('API Response status:', response.status, response.statusText);
-        
         if (!response.ok) {
             let errorData;
             try {
@@ -634,23 +575,18 @@ async function processImage(imageFile) {
             } catch (e) {
                 errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
             }
-            console.error('API Error:', errorData);
             throw new Error(errorData.error || `Failed to process image (${response.status})`);
         }
         
         const data = await response.json();
-        console.log('API Response data:', data);
         
         if (data.success) {
             displayResults(data);
         } else {
-            console.error('API returned success=false:', data);
             throw new Error(data.error || 'Processing failed');
         }
         
     } catch (error) {
-        console.error('Processing error:', error);
-        console.error('Error stack:', error.stack);
         showError(error.message || 'Failed to process image. Please try again.');
         resetToCamera();
     }
@@ -661,7 +597,14 @@ function displayResults(data) {
     const extracted = data.extracted_data || {};
     const overallConfidence = (data.overall_confidence * 100).toFixed(1);
     
-    // Update confidence badge
+    // Display captured card image
+    const capturedImage = document.getElementById('captured-card-image');
+    if (capturedImageBlob && capturedImage) {
+        const imageUrl = URL.createObjectURL(capturedImageBlob);
+        capturedImage.src = imageUrl;
+        capturedImage.style.display = 'block';
+    }
+    
     confidenceValue.textContent = overallConfidence;
     confidenceBadge.className = 'confidence-badge';
     if (data.overall_confidence >= 0.95) {
@@ -672,7 +615,6 @@ function displayResults(data) {
         confidenceBadge.style.background = '#EF4444';
     }
     
-    // Populate fields
     populateField('name', extracted.name);
     populateField('organisation', extracted.organisation);
     populateField('mobile', extracted.mobile_number);
@@ -680,12 +622,10 @@ function displayResults(data) {
     populateField('email', extracted.email_id);
     populateField('designation', extracted.designation);
     
-    // Show raw OCR text
     if (data.raw_text) {
         rawTextDisplay.textContent = data.raw_text;
     }
     
-    // Show extracted text (formatted JSON)
     const extractedData = {};
     Object.keys(data.extracted_data || {}).forEach(field => {
         const fieldData = data.extracted_data[field];
@@ -697,21 +637,16 @@ function displayResults(data) {
     });
     extractedTextDisplay.textContent = JSON.stringify(extractedData, null, 2);
     
-    // Show extraction method
     const method = data.parsing_metadata?.extraction_method || 'unknown';
     extractionMethodDisplay.textContent = `Method: ${method} | Confidence: ${(data.overall_confidence * 100).toFixed(1)}%`;
     
-    // Show results section
     hideProcessing();
     resultsSection.classList.remove('hidden');
     cameraSection.classList.add('hidden');
     
-    // Scroll to results
     setTimeout(() => {
         resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
-    
-    console.log('Results displayed successfully');
 }
 
 // Populate field with data
@@ -748,17 +683,14 @@ async function saveContact() {
             designation: designationInput.value || null
         };
         
-        // Validate required fields
         if (!contactData.name) {
             showError('Name is required');
             return;
         }
         
-        // If editing, include contact ID
         if (isEditMode && contactId) {
             contactData.id = contactId;
         } else {
-            // Store pending data for duplicate check
             pendingContactData = contactData;
         }
         
@@ -775,7 +707,6 @@ async function saveContact() {
         const result = await response.json();
         
         if (!response.ok) {
-            // Check if it's a duplicate (only for new contacts, not edits)
             if (!isEditMode && response.status === 409 && result.is_duplicate) {
                 hideProcessing();
                 showDuplicateModal(result.duplicate, contactData);
@@ -787,25 +718,20 @@ async function saveContact() {
         
         hideProcessing();
         
-        // If editing, refresh contacts list
         if (isEditMode) {
             showSuccess('Contact updated successfully!');
-            // Reset save button
             saveBtn.textContent = '💾 Save Contact';
             saveBtn.removeAttribute('data-edit-mode');
             saveBtn.removeAttribute('data-contact-id');
-            // Reload contacts
             await showContactsList();
         } else {
             showSuccess('Contact saved successfully!');
-            // Reset after 2 seconds
             setTimeout(() => {
                 resetScanner();
             }, 2000);
         }
         
     } catch (error) {
-        console.error('Save error:', error);
         showError(error.message || 'Failed to save contact');
         hideProcessing();
     }
@@ -847,21 +773,18 @@ function showDuplicateModal(duplicate, newContactData) {
 // Overwrite existing contact
 async function overwriteContact() {
     if (!currentDuplicateInfo || !pendingContactData) {
-        console.error('Missing duplicate info or pending data');
         return;
     }
     
     const existingId = currentDuplicateInfo.contact.id;
     const updateData = { 
         ...pendingContactData, 
-        id: existingId  // Include ID to update existing contact
+        id: existingId
     };
     
     try {
         showProcessing();
         duplicateModal.classList.add('hidden');
-        
-        console.log('Overwriting contact:', existingId, 'with data:', updateData.name);
         
         const response = await fetch(`${API_BASE_URL}/api/contacts`, {
             method: 'POST',
@@ -880,17 +803,14 @@ async function overwriteContact() {
         hideProcessing();
         showSuccess('Contact updated successfully!');
         
-        // Clear pending data
         pendingContactData = null;
         currentDuplicateInfo = null;
         
-        // Reset after 2 seconds
         setTimeout(() => {
             resetScanner();
         }, 2000);
         
     } catch (error) {
-        console.error('Update error:', error);
         showError(error.message || 'Failed to update contact');
         hideProcessing();
     }
@@ -900,10 +820,9 @@ async function overwriteContact() {
 async function saveAsNewContact() {
     if (!pendingContactData) return;
     
-    // Add flag to bypass duplicate check and create a new contact
     const newData = {
         ...pendingContactData,
-        _force_new: true  // This tells the backend to skip duplicate detection
+        _force_new: true
     };
     
     try {
@@ -932,7 +851,6 @@ async function saveAsNewContact() {
         }, 2000);
         
     } catch (error) {
-        console.error('Save error:', error);
         showError(error.message || 'Failed to save contact');
         hideProcessing();
     }
@@ -942,14 +860,12 @@ async function saveAsNewContact() {
 function cancelSave() {
     duplicateModal.classList.add('hidden');
     currentDuplicateInfo = null;
-    pendingContactData = null; // Clear pending data when cancelled
+    pendingContactData = null;
     hideProcessing();
-    // Return to results view so user can modify and try again
 }
 
 // Reset scanner - return to homepage
 function resetScanner() {
-    // Clear fields
     nameInput.value = '';
     orgInput.value = '';
     mobileInput.value = '';
@@ -957,17 +873,24 @@ function resetScanner() {
     emailInput.value = '';
     designationInput.value = '';
     rawTextDisplay.textContent = '';
-    
-    // Reset file input
     fileInput.value = '';
     
-    // Reset edit mode
+    // Clear captured image
+    const capturedImage = document.getElementById('captured-card-image');
+    if (capturedImage) {
+        if (capturedImage.src) {
+            URL.revokeObjectURL(capturedImage.src);
+        }
+        capturedImage.src = '';
+        capturedImage.style.display = 'none';
+    }
+    capturedImageBlob = null;
+    
     const saveBtn = document.getElementById('save-btn');
     saveBtn.textContent = '💾 Save Contact';
     saveBtn.removeAttribute('data-edit-mode');
     saveBtn.removeAttribute('data-contact-id');
     
-    // Hide sections
     const homepageActions = document.getElementById('homepage-actions');
     resultsSection.classList.add('hidden');
     processingSection.classList.add('hidden');
@@ -976,14 +899,12 @@ function resetScanner() {
     hideSuccess();
     hideError();
     
-    // Stop camera
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
     stopBorderDetection();
     
-    // Show homepage
     homepageActions.classList.remove('hidden');
 }
 
@@ -1018,7 +939,6 @@ async function showContactsList() {
         }
         
         if (result.contacts && result.contacts.length > 0) {
-            // Store contacts for filtering and use renderContacts to show buttons
             window.allContacts = result.contacts;
             renderContacts(result.contacts);
         } else {
@@ -1027,7 +947,6 @@ async function showContactsList() {
         }
         
     } catch (error) {
-        console.error('Load contacts error:', error);
         contactsList.innerHTML = `<p class="error">Failed to load contacts: ${error.message}</p>`;
     }
 }
@@ -1039,7 +958,7 @@ function hideContactsList() {
     cameraSection.classList.add('hidden');
     resultsSection.classList.add('hidden');
     homepageActions.classList.remove('hidden');
-    contactsSearch.value = ''; // Clear search
+    contactsSearch.value = '';
 }
 
 // Render contacts list
@@ -1069,7 +988,6 @@ function renderContacts(contacts) {
         </div>
     `).join('');
     
-    // Add event listeners for edit and delete buttons
     document.querySelectorAll('.edit-contact-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const contactId = e.target.getAttribute('data-contact-id');
@@ -1143,7 +1061,6 @@ async function deleteContact(contactId) {
         showSuccess('Contact deleted successfully!');
         
     } catch (error) {
-        console.error('Delete error:', error);
         showError(error.message || 'Failed to delete contact');
     }
 }
@@ -1156,7 +1073,6 @@ async function editContact(contactId) {
         return;
     }
     
-    // Populate form fields with contact data
     nameInput.value = contact.name || '';
     orgInput.value = contact.organisation || '';
     mobileInput.value = contact.mobile_number || '';
@@ -1164,21 +1080,17 @@ async function editContact(contactId) {
     emailInput.value = contact.email_id || '';
     designationInput.value = contact.designation || '';
     
-    // Show results section with edit mode
     const homepageActions = document.getElementById('homepage-actions');
     homepageActions.classList.add('hidden');
     contactsSection.classList.add('hidden');
     cameraSection.classList.add('hidden');
     resultsSection.classList.remove('hidden');
     
-    // Change save button text
     const saveBtn = document.getElementById('save-btn');
-    const originalText = saveBtn.textContent;
     saveBtn.textContent = '💾 Update Contact';
     saveBtn.setAttribute('data-edit-mode', 'true');
     saveBtn.setAttribute('data-contact-id', contactId);
     
-    // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1235,10 +1147,8 @@ function fileToBase64(file) {
 // Handle page visibility (pause/resume camera)
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && stream) {
-        // Pause camera when page is hidden
         stream.getTracks().forEach(track => track.stop());
     } else if (!document.hidden && !stream) {
-        // Resume camera when page is visible
         initializeCamera();
     }
 });

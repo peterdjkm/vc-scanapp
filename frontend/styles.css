@@ -42,29 +42,61 @@ header {
     box-shadow: var(--shadow);
 }
 
+header h1 {
+    font-size: 1.75rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
 /* Homepage Actions */
 .homepage-buttons {
     display: flex;
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 0.5rem;
 }
 
 .btn-large {
-    padding: 1rem 2rem;
+    padding: 1.25rem 2.5rem;
     font-size: 1.1rem;
-    min-width: 200px;
+    font-weight: 600;
+    min-width: 220px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
 }
 
-header h1 {
-    font-size: 1.75rem;
+.btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-large.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-large.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-large.btn-secondary {
+    background: white;
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
+    border: 2px solid var(--primary-color);
 }
 
-.subtitle {
-    color: var(--text-light);
-    font-size: 0.9rem;
+.btn-large.btn-secondary:hover {
+    background: var(--primary-color);
+    color: white;
 }
 
 .section {
@@ -209,9 +241,10 @@ header h1 {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     flex: 1;
     max-width: 200px;
+    font-family: inherit;
 }
 
 .btn:disabled {
@@ -282,6 +315,42 @@ header h1 {
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid var(--border-color);
+}
+
+/* Card Image Preview */
+.card-image-preview {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.card-image-preview h3 {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.card-image-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
 }
 
 .results-header h2 {
