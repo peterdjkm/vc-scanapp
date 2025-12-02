@@ -933,7 +933,9 @@ async function saveAsNewContact() {
 function cancelSave() {
     duplicateModal.classList.add('hidden');
     currentDuplicateInfo = null;
-    pendingContactData = null;
+    pendingContactData = null; // Clear pending data when cancelled
+    hideProcessing();
+    // Return to results view so user can modify and try again
 }
 
 // Reset scanner - return to homepage
@@ -1007,19 +1009,12 @@ async function showContactsList() {
         }
         
         if (result.contacts && result.contacts.length > 0) {
-            contactsList.innerHTML = result.contacts.map(contact => `
-                <div class="contact-card">
-                    <h3>${contact.name || 'Unknown'}</h3>
-                    <p><strong>Organisation:</strong> ${contact.organisation || 'N/A'}</p>
-                    <p><strong>Designation:</strong> ${contact.designation || 'N/A'}</p>
-                    <p><strong>Email:</strong> ${contact.email_id || 'N/A'}</p>
-                    <p><strong>Mobile:</strong> ${contact.mobile_number || 'N/A'}</p>
-                    <p><strong>Landline:</strong> ${contact.landline_number || 'N/A'}</p>
-                    <p class="contact-meta">Saved: ${new Date(contact.created_at).toLocaleDateString()}</p>
-                </div>
-            `).join('');
+            // Store contacts for filtering and use renderContacts to show buttons
+            window.allContacts = result.contacts;
+            renderContacts(result.contacts);
         } else {
             contactsList.innerHTML = '<p>No contacts saved yet.</p>';
+            window.allContacts = [];
         }
         
     } catch (error) {

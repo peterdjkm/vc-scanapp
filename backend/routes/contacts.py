@@ -162,6 +162,9 @@ def save_contact():
         contact_id = data.get('id')
         force_new = data.get('_force_new', False)  # Flag to bypass duplicate check
         
+        # Log for debugging
+        current_app.logger.info(f"Save contact request: user_id={user_id}, contact_id={contact_id}, force_new={force_new}")
+        
         if contact_id:
             # Update existing contact
             contact = Contact.query.get(contact_id)
@@ -173,20 +176,28 @@ def save_contact():
         else:
             # Check for duplicates before creating new contact (unless force_new is True)
             if not force_new:
-                is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
-                
-                if is_dup:
-                    # Return duplicate information - let frontend decide what to do
-                    return jsonify({
-                        'success': False,
-                        'error': 'Duplicate contact detected',
-                        'is_duplicate': True,
-                        'duplicate': duplicate_info,
-                        'message': f"Similar contact found: {duplicate_info['contact'].get('name', 'Unknown')} "
-                                  f"(similarity: {duplicate_info['similarity']:.1%})"
-                    }), 409  # 409 Conflict
+                try:
+                    is_dup, duplicate_info = is_duplicate(data, user_id, threshold=0.85)
+                    current_app.logger.info(f"Duplicate check: is_dup={is_dup}, user_id={user_id}")
+                    
+                    if is_dup:
+                        # Return duplicate information - let frontend decide what to do
+                        current_app.logger.warning(f"Duplicate detected: {duplicate_info.get('contact', {}).get('name', 'Unknown')}")
+                        return jsonify({
+                            'success': False,
+                            'error': 'Duplicate contact detected',
+                            'is_duplicate': True,
+                            'duplicate': duplicate_info,
+                            'message': f"Similar contact found: {duplicate_info['contact'].get('name', 'Unknown')} "
+                                      f"(similarity: {duplicate_info['similarity']:.1%})"
+                        }), 409  # 409 Conflict - DO NOT CREATE CONTACT
+                except Exception as dup_error:
+                    # If duplicate check fails, log but don't block save (fail open for now)
+                    current_app.logger.error(f"Duplicate check failed: {str(dup_error)}")
+                    # Continue to create contact if duplicate check fails
             
-            # Create new contact
+            # Only create new contact if no duplicate was found (or force_new is True)
+            current_app.logger.info(f"Creating new contact: force_new={force_new}")
             contact = Contact(id=str(uuid.uuid4()))
             db.session.add(contact)
         
