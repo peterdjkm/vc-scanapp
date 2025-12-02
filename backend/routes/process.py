@@ -3,11 +3,9 @@ Process card endpoint - main extraction endpoint
 """
 from flask import Blueprint, request, jsonify, current_app
 import base64
-import os
 from services.vision_service import VisionService
 from services.parser_service import TextParser
 import uuid
-from datetime import datetime
 
 process_bp = Blueprint('process', __name__)
 
