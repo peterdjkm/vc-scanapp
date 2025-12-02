@@ -23,33 +23,32 @@
     <div class="container">
         <!-- Homepage -->
         <section id="homepage-actions" class="homepage-section">
+            <h1 class="app-title">BUSINESS CARD SCANNER</h1>
             <div class="app-logo">
-                <div class="logo-icon">📷</div>
+                <div class="logo-icon">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="25" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="8" fill="currentColor"/>
+                        <rect x="30" y="20" width="40" height="8" rx="2" fill="currentColor"/>
+                    </svg>
+                </div>
             </div>
-            <h1 class="app-title">Business Card Scanner</h1>
-            <p class="app-subtitle">AI-powered OCR for contact management</p>
+            <p class="app-slogan">CAPTURE. ORGANIZE. CONNECT</p>
             
-            <div class="homepage-buttons">
-                <button id="scan-card-btn" class="action-btn btn-primary">
-                    <span class="btn-icon">📷</span>
-                    <div class="btn-content">
-                        <span class="btn-title">Scan Business Card</span>
-                        <span class="btn-subtitle">Capture and extract details</span>
-                    </div>
+            <div class="homepage-actions">
+                <button id="scan-card-btn" class="action-item">
+                    <span class="action-icon">📷</span>
+                    <span class="action-text">SCAN BUSINESS CARD</span>
                 </button>
-                <button id="view-contacts-btn" class="action-btn btn-secondary">
-                    <span class="btn-icon">👥</span>
-                    <div class="btn-content">
-                        <span class="btn-title">Browse Contacts</span>
-                        <span class="btn-subtitle">View saved cards</span>
-                    </div>
+                <button id="view-contacts-btn" class="action-item">
+                    <span class="action-icon">👥</span>
+                    <span class="action-text">BROWSE CONTACTS</span>
                 </button>
-                <button id="login-btn" class="action-btn btn-tertiary">
-                    <span class="btn-icon">🔐</span>
-                    <div class="btn-content">
-                        <span class="btn-title">Login / Register</span>
-                        <span class="btn-subtitle">Access your account</span>
-                    </div>
+                <button id="login-btn" class="action-item">
+                    <span class="action-icon">ℹ️</span>
+                    <span class="action-text">LOGIN / REGISTER</span>
+                    <span class="action-arrow">→</span>
                 </button>
             </div>
             
@@ -61,8 +60,8 @@
         <!-- Login/Register Section -->
         <section id="auth-section" class="section hidden">
             <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login">Login</button>
-                <button class="auth-tab" data-tab="register">Register</button>
+                <button class="auth-tab active" data-tab="login">LOGIN</button>
+                <button class="auth-tab" data-tab="register">REGISTER</button>
             </div>
             
             <div id="login-form" class="auth-form active">
@@ -83,8 +82,9 @@
                 <div class="form-footer">
                     <a href="#" class="forgot-password">Forgot password?</a>
                 </div>
-                <button id="login-submit-btn" class="btn btn-primary btn-block">Login</button>
-                <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-register">Register</a></p>
+                <button id="login-submit-btn" class="btn btn-primary btn-block">LOGIN</button>
+                <p class="auth-switch">Don't have a account?</p>
+                <a href="#" id="switch-to-register" class="auth-register-link">REGISTER</a>
             </div>
             
             <div id="register-form" class="auth-form">
@@ -109,8 +109,9 @@
                         <input type="password" id="register-password" class="form-input" placeholder="Create a password">
                     </div>
                 </div>
-                <button id="register-submit-btn" class="btn btn-primary btn-block">Register</button>
-                <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Login</a></p>
+                <button id="register-submit-btn" class="btn btn-primary btn-block">REGISTER</button>
+                <p class="auth-switch">Already have an account?</p>
+                <a href="#" id="switch-to-login" class="auth-register-link">LOGIN</a>
             </div>
         </section>
 
