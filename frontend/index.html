@@ -21,20 +21,96 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📇 Visiting Card Scanner</h1>
-            <p class="subtitle">Capture and extract contact information</p>
-        </header>
-
-        <!-- Homepage Actions -->
-        <section id="homepage-actions" class="section">
+        <!-- Homepage -->
+        <section id="homepage-actions" class="homepage-section">
+            <div class="app-logo">
+                <div class="logo-icon">📷</div>
+            </div>
+            <h1 class="app-title">Business Card Scanner</h1>
+            <p class="app-subtitle">AI-powered OCR for contact management</p>
+            
             <div class="homepage-buttons">
-                <button id="scan-card-btn" class="btn btn-primary btn-large">
-                    📷 Scan New Card
+                <button id="scan-card-btn" class="action-btn btn-primary">
+                    <span class="btn-icon">📷</span>
+                    <div class="btn-content">
+                        <span class="btn-title">Scan Business Card</span>
+                        <span class="btn-subtitle">Capture and extract details</span>
+                    </div>
                 </button>
-                <button id="view-contacts-btn" class="btn btn-secondary btn-large">
-                    📋 Browse Contacts
+                <button id="view-contacts-btn" class="action-btn btn-secondary">
+                    <span class="btn-icon">👥</span>
+                    <div class="btn-content">
+                        <span class="btn-title">Browse Contacts</span>
+                        <span class="btn-subtitle">View saved cards</span>
+                    </div>
                 </button>
+                <button id="login-btn" class="action-btn btn-tertiary">
+                    <span class="btn-icon">🔐</span>
+                    <div class="btn-content">
+                        <span class="btn-title">Login / Register</span>
+                        <span class="btn-subtitle">Access your account</span>
+                    </div>
+                </button>
+            </div>
+            
+            <div class="stats-footer">
+                <span>Total Cards: <span id="total-cards-count">0</span></span>
+            </div>
+        </section>
+
+        <!-- Login/Register Section -->
+        <section id="auth-section" class="section hidden">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Register</button>
+            </div>
+            
+            <div id="login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="login-email" class="form-input" placeholder="your@email.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="login-password" class="form-input" placeholder="Enter your password">
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+                <button id="login-submit-btn" class="btn btn-primary btn-block">Login</button>
+                <p class="auth-switch">Don't have an account? <a href="#" id="switch-to-register">Register</a></p>
+            </div>
+            
+            <div id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-name">Name</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="register-name" class="form-input" placeholder="Your name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="register-email" class="form-input" placeholder="your@email.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="register-password" class="form-input" placeholder="Create a password">
+                    </div>
+                </div>
+                <button id="register-submit-btn" class="btn btn-primary btn-block">Register</button>
+                <p class="auth-switch">Already have an account? <a href="#" id="switch-to-login">Login</a></p>
             </div>
         </section>
 

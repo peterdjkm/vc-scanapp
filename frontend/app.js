@@ -54,6 +54,7 @@ let pendingContactData = null; // Store contact data pending save
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    loadTotalCardsCount();
 });
 
 // Show camera section
@@ -62,10 +63,12 @@ function showCamera() {
     const cameraSection = document.getElementById('camera-section');
     const resultsSection = document.getElementById('results-section');
     const contactsSection = document.getElementById('contacts-section');
+    const authSection = document.getElementById('auth-section');
     
     homepageActions.classList.add('hidden');
     contactsSection.classList.add('hidden');
     resultsSection.classList.add('hidden');
+    authSection.classList.add('hidden');
     cameraSection.classList.remove('hidden');
     
     if (!stream) {
@@ -487,7 +490,28 @@ function setupEventListeners() {
     document.getElementById('scan-card-btn').addEventListener('click', showCamera);
     document.getElementById('view-contacts-btn').addEventListener('click', showContactsList);
     document.getElementById('close-contacts-btn').addEventListener('click', hideContactsList);
+    document.getElementById('login-btn').addEventListener('click', showAuthSection);
     contactsSearch.addEventListener('input', filterContacts);
+    
+    // Auth tab switching
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchAuthTab(tab.dataset.tab));
+    });
+    
+    // Auth form switching
+    document.getElementById('switch-to-register')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchAuthTab('register');
+    });
+    
+    document.getElementById('switch-to-login')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchAuthTab('login');
+    });
+    
+    // Auth form submissions
+    document.getElementById('login-submit-btn')?.addEventListener('click', handleLogin);
+    document.getElementById('register-submit-btn')?.addEventListener('click', handleRegister);
     
     // Duplicate modal buttons
     document.getElementById('overwrite-btn').addEventListener('click', overwriteContact);
@@ -726,6 +750,7 @@ async function saveContact() {
             await showContactsList();
         } else {
             showSuccess('Contact saved successfully!');
+            loadTotalCardsCount(); // Update count
             setTimeout(() => {
                 resetScanner();
             }, 2000);
@@ -946,6 +971,8 @@ async function showContactsList() {
             window.allContacts = [];
         }
         
+        loadTotalCardsCount(); // Update count when viewing contacts
+        
     } catch (error) {
         contactsList.innerHTML = `<p class="error">Failed to load contacts: ${error.message}</p>`;
     }
@@ -954,11 +981,94 @@ async function showContactsList() {
 // Hide contacts list
 function hideContactsList() {
     const homepageActions = document.getElementById('homepage-actions');
+    const authSection = document.getElementById('auth-section');
     contactsSection.classList.add('hidden');
     cameraSection.classList.add('hidden');
     resultsSection.classList.add('hidden');
+    authSection.classList.add('hidden');
     homepageActions.classList.remove('hidden');
     contactsSearch.value = '';
+}
+
+// Show auth section
+function showAuthSection() {
+    const homepageActions = document.getElementById('homepage-actions');
+    const authSection = document.getElementById('auth-section');
+    homepageActions.classList.add('hidden');
+    cameraSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    contactsSection.classList.add('hidden');
+    authSection.classList.remove('hidden');
+    switchAuthTab('login');
+}
+
+// Switch auth tab
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    
+    document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`${tab}-form`).classList.add('active');
+}
+
+// Handle login
+async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    if (!email || !password) {
+        showError('Please enter both email and password');
+        return;
+    }
+    
+    // TODO: Implement actual login API call
+    showSuccess('Login functionality coming soon!');
+    setTimeout(() => {
+        hideAuthSection();
+    }, 2000);
+}
+
+// Handle register
+async function handleRegister() {
+    const name = document.getElementById('register-name').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    
+    if (!name || !email || !password) {
+        showError('Please fill in all fields');
+        return;
+    }
+    
+    // TODO: Implement actual register API call
+    showSuccess('Registration functionality coming soon!');
+    setTimeout(() => {
+        hideAuthSection();
+    }, 2000);
+}
+
+// Hide auth section
+function hideAuthSection() {
+    const homepageActions = document.getElementById('homepage-actions');
+    const authSection = document.getElementById('auth-section');
+    authSection.classList.add('hidden');
+    homepageActions.classList.remove('hidden');
+}
+
+// Load total cards count
+async function loadTotalCardsCount() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/contacts`);
+        if (response.ok) {
+            const result = await response.json();
+            const count = result.contacts?.length || 0;
+            const countElement = document.getElementById('total-cards-count');
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+    } catch (error) {
+        // Silently fail - count will show 0
+    }
 }
 
 // Render contacts list
@@ -1058,6 +1168,7 @@ async function deleteContact(contactId) {
         // Re-render contacts
         filterContacts();
         
+        loadTotalCardsCount(); // Update count
         showSuccess('Contact deleted successfully!');
         
     } catch (error) {
