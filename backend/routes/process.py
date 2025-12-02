@@ -6,10 +6,6 @@ import base64
 import os
 from services.vision_service import VisionService
 from services.parser_service import TextParser
-from utils.database import db
-from models.contact import Contact
-from models.extraction_result import ExtractionResult
-from models.confidence_metric import ConfidenceMetric
 import uuid
 from datetime import datetime
 
@@ -82,63 +78,13 @@ def process_card():
         # Parse text to extract structured data
         parse_result = parser.parse(raw_text)
         
-        # Generate contact ID
+        # Generate contact ID (for reference only - not saved until user clicks "Save Contact")
         contact_id = str(uuid.uuid4())
         
-        # Save to database (optional - can be disabled for testing)
-        save_to_db = os.getenv('SAVE_TO_DB', 'false').lower() == 'true'
-        database_enabled = current_app.config.get('DATABASE_ENABLED', False)
-        database_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
-        
-        # Only save if database is properly configured
-        if save_to_db and database_enabled and database_uri:
-            try:
-                # Create contact record
-                contact = Contact(
-                    id=contact_id,
-                    user_id=user_id,
-                    name=parse_result['extracted_data'].get('name', {}).get('value'),
-                    organisation=parse_result['extracted_data'].get('organisation', {}).get('value'),
-                    mobile_number=parse_result['extracted_data'].get('mobile_number', {}).get('value'),
-                    landline_number=parse_result['extracted_data'].get('landline_number', {}).get('value'),
-                    email_id=parse_result['extracted_data'].get('email_id', {}).get('value'),
-                    designation=parse_result['extracted_data'].get('designation', {}).get('value'),
-                    raw_text=raw_text,
-                    overall_confidence=parse_result['overall_confidence']
-                )
-                
-                db.session.add(contact)
-                db.session.flush()
-                
-                # Save extraction results
-                for field_name, field_data in parse_result['extracted_data'].items():
-                    extraction_result = ExtractionResult(
-                        contact_id=contact_id,
-                        field_name=field_name,
-                        extracted_value=field_data.get('value'),
-                        confidence=field_data.get('confidence'),
-                        extraction_method=field_data.get('source'),
-                        source_line=None  # Can be enhanced later
-                    )
-                    db.session.add(extraction_result)
-                
-                # Save confidence metrics
-                confidence_metric = ConfidenceMetric(
-                    contact_id=contact_id,
-                    overall_confidence=parse_result['overall_confidence'],
-                    field_detection_rate=len(parse_result['parsing_metadata']['detected_fields']) / len(parser.ALL_FIELDS),
-                    field_accuracy=None,  # Will be calculated after manual validation
-                    missing_fields=parse_result['parsing_metadata']['missing_fields'],
-                    detected_fields=parse_result['parsing_metadata']['detected_fields']
-                )
-                db.session.add(confidence_metric)
-                
-                db.session.commit()
-            except Exception as db_error:
-                # Log database error but don't fail the request
-                print(f"⚠️  Database save failed: {str(db_error)}")
-                db.session.rollback()
-                # Continue without saving to database
+        # IMPORTANT: Do NOT save to database automatically here!
+        # The contact should only be saved when the user explicitly clicks "Save Contact"
+        # This allows the user to review the extracted data and prevents duplicate saves
+        # Duplicate detection will happen in the /api/contacts POST endpoint
         
         # Prepare response
         response = {
