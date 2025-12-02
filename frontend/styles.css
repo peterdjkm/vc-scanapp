@@ -292,7 +292,8 @@ footer {
 
 .progress {
     height: 4px;
-    width: 100%;
+    width: 75%;
+    max-width: 210px;
     margin: 0 auto;
     border-radius: 999px;
     overflow: hidden;
