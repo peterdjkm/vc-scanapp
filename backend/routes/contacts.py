@@ -192,12 +192,16 @@ def save_contact():
                                       f"(similarity: {duplicate_info['similarity']:.1%})"
                         }), 409  # 409 Conflict - DO NOT CREATE CONTACT
                 except Exception as dup_error:
-                    # If duplicate check fails, log but don't block save (fail open for now)
+                    # If duplicate check fails, log error and block save to prevent duplicates
                     current_app.logger.error(f"Duplicate check failed: {str(dup_error)}")
-                    # Continue to create contact if duplicate check fails
+                    return jsonify({
+                        'success': False,
+                        'error': f'Duplicate check failed: {str(dup_error)}. Contact not saved to prevent duplicates.'
+                    }), 500
             
             # Only create new contact if no duplicate was found (or force_new is True)
-            current_app.logger.info(f"Creating new contact: force_new={force_new}")
+            # This code should NEVER execute if a duplicate was detected above
+            current_app.logger.info(f"Creating new contact: force_new={force_new}, name={data.get('name', 'N/A')}")
             contact = Contact(id=str(uuid.uuid4()))
             db.session.add(contact)
         

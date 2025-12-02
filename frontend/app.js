@@ -846,7 +846,10 @@ function showDuplicateModal(duplicate, newContactData) {
 
 // Overwrite existing contact
 async function overwriteContact() {
-    if (!currentDuplicateInfo || !pendingContactData) return;
+    if (!currentDuplicateInfo || !pendingContactData) {
+        console.error('Missing duplicate info or pending data');
+        return;
+    }
     
     const existingId = currentDuplicateInfo.contact.id;
     const updateData = { 
@@ -857,6 +860,8 @@ async function overwriteContact() {
     try {
         showProcessing();
         duplicateModal.classList.add('hidden');
+        
+        console.log('Overwriting contact:', existingId, 'with data:', updateData.name);
         
         const response = await fetch(`${API_BASE_URL}/api/contacts`, {
             method: 'POST',
@@ -874,6 +879,10 @@ async function overwriteContact() {
         
         hideProcessing();
         showSuccess('Contact updated successfully!');
+        
+        // Clear pending data
+        pendingContactData = null;
+        currentDuplicateInfo = null;
         
         // Reset after 2 seconds
         setTimeout(() => {
